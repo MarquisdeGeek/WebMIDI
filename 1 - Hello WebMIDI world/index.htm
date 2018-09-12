@@ -1,0 +1,29 @@
+<script>
+navigator.requestMIDIAccess()
+  .then(onMIDISuccess, onMIDIFailure);
+
+function onMIDISuccess(midiAccess) {
+  for (var input of midiAccess.inputs.values()) {
+    input.onmidimessage = getMIDIMessage;
+  }
+}
+
+function onMIDIFailure() {
+  alert('Could not access your MIDI devices.');
+}
+
+function getMIDIMessage(message) {
+  var command = message.data[0] & 0xf0;
+
+  switch(command) {
+    case 0x90:
+    console.log('Note on: ' +
+      'Channel ' + (message.data[0] & 0x0f) + '. ' +
+      'Value=' + message.data[1] + '. ' +
+      'Volume=' + message.data[2] + '.'
+      );
+    break;
+  }
+}
+
+</script>

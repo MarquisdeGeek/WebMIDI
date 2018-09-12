@@ -1,0 +1,64 @@
+<div id="sgxAudio"></div>
+
+<script type="text/javascript" src="//sgxengine.com/code/lib/js/jquery/jquery-1.11.1.min.js"></script>
+<script type="text/javascript" src="//sgxengine.com/code/jpjs/jquery.jplayer.min.js"></script>
+<script type="text/javascript" src="//sgxengine.com/code/sgx/sgx-3.1.14.min.js"></script>
+
+<p><a href="#" id="hsvs">HSVS Synth strings</a></p>
+<p><a href="#" id="moog">Moog Taurus Bass</a></p>
+
+<script>
+var sampleList = [];
+
+function loadSamples(name) {
+  for(var i=48;i<68;++i) {
+    sampleList[i] = { sample: sgx.audio.Engine.get().registerGlobalSound(name + '/' + i) };
+  }
+}
+
+$(document).ready(function() {
+  loadSamples('hsvs_low');
+
+  $('#hsvs').click(function() {loadSamples('hsvs_low')});
+  $('#moog').click(function() {loadSamples('moog_taurus_bass')});
+
+  navigator.requestMIDIAccess()
+    .then(onMIDISuccess, onMIDIFailure);
+});
+
+function onMIDISuccess(midiAccess) {
+  for (var input of midiAccess.inputs.values()) {
+    input.onmidimessage = getMIDIMessage;
+  }
+}
+
+function onMIDIFailure() {
+  alert('Could not access your MIDI devices.');
+}
+
+function getMIDIMessage(message) {
+  var command = message.data[0] & 0xf0;
+
+  if (command === 0x90 && message.data[2] === 0) {
+  	command = 0x80;
+  }
+
+  switch(command) {
+    case 0x80:
+    var note = message.data[1];
+    if (sampleList[note] && sampleList[note].channel) {
+    	sgx.audio.Engine.get().stopSound(sampleList[note].channel);
+    	sampleList[note].channel = undefined;
+    }
+	
+    break;
+    case 0x90:
+    var note = message.data[1];
+    if (sampleList[note] && !sampleList[note].channel) {
+    	sampleList[note].channel = sgx.audio.Engine.get().playSound(sampleList[note].sample);
+    }
+    break;
+  }
+}
+
+</script>

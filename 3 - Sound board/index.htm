@@ -1,0 +1,97 @@
+<div id="sgxAudio"></div>
+
+<script type="text/javascript" src="//sgxengine.com/code/lib/js/jquery/jquery-1.11.1.min.js"></script>
+<script type="text/javascript" src="//sgxengine.com/code/jpjs/jquery.jplayer.min.js"></script>
+<script type="text/javascript" src="//sgxengine.com/code/sgx/sgx-3.1.14.min.js"></script>
+
+<script>
+
+$(document).ready(function() {
+  sgx.audio.Engine.get().registerGlobalSound('audio/loop001');
+  sgx.audio.Engine.get().registerGlobalSound('audio/swoosh');
+  sgx.audio.Engine.get().registerGlobalSound('audio/electro001');
+  sgx.audio.Engine.get().registerGlobalSound('audio/one');
+  sgx.audio.Engine.get().registerGlobalSound('audio/two');
+  sgx.audio.Engine.get().registerGlobalSound('audio/three');
+  sgx.audio.Engine.get().registerGlobalSound('audio/four');
+  sgx.audio.Engine.get().registerGlobalSound('audio/dj');
+
+  navigator.requestMIDIAccess()
+    .then(onMIDISuccess, onMIDIFailure);
+});
+
+
+function onMIDISuccess(midiAccess) {
+  for (var input of midiAccess.inputs.values()) {
+    input.onmidimessage = getMIDIMessage;
+  }
+}
+
+function onMIDIFailure() {
+  alert('Could not access your MIDI devices.');
+}
+
+var isLooping;
+var loopChannel;
+function getMIDIMessage(message) {
+  var command = message.data[0] & 0xf0;
+
+  if (command === 0x90 && message.data[2] === 0) {
+  	command = 0x80;
+  }
+
+  switch(command) {
+    case 0x80:
+    if (message.data[1] === 50) {
+    	sgx.audio.Engine.get().stopSound("loop001");
+    }
+	
+    break;
+    case 0x90:
+    console.log('Note on: ' +
+      'Channel ' + (message.data[0] & 0x0f) + '. ' +
+      'Value=' + message.data[1] + '. ' +
+      'Volume=' + message.data[2] + '.'
+      );
+    switch(message.data[1]) {
+    	case 48:
+    	if (loopChannel) {
+    		loopChannel.unloop();
+	    	sgx.audio.Engine.get().stopSound("loop001");
+    		loopChannel = undefined;
+    	} else {
+	    	loopChannel = sgx.audio.Engine.get().playSound("loop001");
+	    	loopChannel.loop();
+    	}
+    	break;
+    	case 50:
+    	sgx.audio.Engine.get().playSound("loop001");
+    	break;
+    	case 60:
+    	sgx.audio.Engine.get().playSound("swoosh");
+    	break;
+    	case 62:
+    	sgx.audio.Engine.get().playSound("electro001");
+    	break;
+    	case 64:
+    	sgx.audio.Engine.get().playSound("one");
+    	break;
+    	case 65:
+    	sgx.audio.Engine.get().playSound("two");
+    	break;
+    	case 67:
+    	sgx.audio.Engine.get().playSound("three");
+    	break;
+    	case 69:
+    	sgx.audio.Engine.get().playSound("four");
+    	break;
+    	case 71:
+    	sgx.audio.Engine.get().playSound("dj");
+    	break;
+
+    }
+    break;
+  }
+}
+
+</script>
